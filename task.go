@@ -24,7 +24,7 @@ func init() {
 	var queueSize int
 	var err error
 
-	envSize := strings.TrimSpace(os.Getenv("ZDAVEP_ASYNC_TASK_QUEUE_SIZE"))
+	envSize := strings.TrimSpace(os.Getenv("ASYNC_TASK_QUEUE_SIZE"))
 
 	if envSize == "" {
 		queueSize = defQueueSize

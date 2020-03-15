@@ -32,7 +32,10 @@ func TestAsync(t *testing.T) {
 
 	d := NewDispatcher(AutoSize)
 	d.Start()
-	defer d.Stop()
+	defer func() {
+		d.Stop()
+		time.Sleep(time.Second) // Wait for workers to quit
+	}()
 
 	for i := 1; i <= 10; i++ {
 		wg.Add(1)

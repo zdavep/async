@@ -40,7 +40,7 @@ func NewDispatcher(size int) *Dispatcher {
 	}
 
 	for i := 0; i < d.size; i++ {
-		d.workers[i] = newWorker(d.pool)
+		d.workers[i] = newWorker(i, d.pool)
 	}
 
 	return d
@@ -74,5 +74,7 @@ func (d *Dispatcher) Stop() {
 	for _, worker := range d.workers {
 		worker.stop()
 	}
-	d.quit <- true
+	go func() {
+		d.quit <- true
+	}()
 }

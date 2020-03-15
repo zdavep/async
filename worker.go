@@ -4,14 +4,16 @@ import "log"
 
 // A worker performs task processing.
 type worker struct {
+	id    int
 	queue chan Task
 	pool  chan chan Task
 	quit  chan bool
 }
 
 // Creates a new worker instance.
-func newWorker(pool chan chan Task) *worker {
+func newWorker(id int, pool chan chan Task) *worker {
 	return &worker{
+		id:    id,
 		pool:  pool,
 		queue: make(chan Task),
 		quit:  make(chan bool),
@@ -25,6 +27,7 @@ func (w *worker) start() {
 			w.pool <- w.queue // Indicate we're ready for a task
 			select {
 			case <-w.quit:
+				log.Printf("async: quit signal in worker %d", w.id)
 				return
 			case task := <-w.queue:
 				if err := task.Process(); err != nil {
@@ -37,5 +40,7 @@ func (w *worker) start() {
 
 // Stop processing tasks.
 func (w *worker) stop() {
-	w.quit <- true
+	go func() {
+		w.quit <- true
+	}()
 }
