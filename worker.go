@@ -22,20 +22,20 @@ func newWorker(id int, pool chan chan Task) *worker {
 
 // Process tasks until a quit signal is received.
 func (w *worker) start() {
-	go func() {
+	go func(pool chan chan Task, queue chan Task, quit chan bool) {
 		for {
-			w.pool <- w.queue // Indicate we're ready for a task
+			pool <- queue // Indicate we're ready for a task
 			select {
-			case <-w.quit:
+			case <-quit:
 				log.Printf("async: quit signal in worker %d", w.id)
 				return
-			case task := <-w.queue:
+			case task := <-queue:
 				if err := task.Process(); err != nil {
 					log.Printf("async: unable to process task: %+v", err)
 				}
 			}
 		}
-	}()
+	}(w.pool, w.queue, w.quit)
 }
 
 // Stop processing tasks.

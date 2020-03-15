@@ -34,7 +34,7 @@ func TestAsync(t *testing.T) {
 	d.Start()
 	defer func() {
 		d.Stop()
-		time.Sleep(time.Second) // Wait for workers to quit
+		//time.Sleep(time.Second) // Wait for go-routines to exit
 	}()
 
 	for i := 1; i <= 10; i++ {
