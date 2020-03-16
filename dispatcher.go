@@ -11,12 +11,15 @@ const AutoSize int = -1
 // MinWorkers in the minimum worker pool size
 const MinWorkers int = 2
 
+// WorkerPool is a type alias for a channel of task channels (ie where workers receive tasks).
+type WorkerPool = chan chan Task
+
 // Dispatcher dispatches tasks to a pool of workers for processing.
 type Dispatcher struct {
-	pool    chan chan Task
-	size    int
-	workers []*worker
-	quit    chan bool
+	workerPool WorkerPool
+	size       int
+	workers    []*worker
+	quit       chan bool
 }
 
 // Determine the worker pool size based on the number of available CPUs.
@@ -36,14 +39,14 @@ func NewDispatcher(size int) *Dispatcher {
 	}
 
 	d := &Dispatcher{
-		pool:    make(chan chan Task, size),
-		size:    size,
-		workers: make([]*worker, size),
-		quit:    make(chan bool),
+		workerPool: make(WorkerPool, size),
+		size:       size,
+		workers:    make([]*worker, size),
+		quit:       make(chan bool),
 	}
 
 	for i := 0; i < d.size; i++ {
-		d.workers[i] = newWorker(i, d.pool)
+		d.workers[i] = newWorker(i, d.workerPool)
 	}
 
 	return d
@@ -54,7 +57,7 @@ func (d *Dispatcher) Start() {
 	for _, worker := range d.workers {
 		worker.start()
 	}
-	go func(pool chan chan Task, quit chan bool) {
+	go func(workerPool WorkerPool, quit chan bool) {
 		for {
 			select {
 			case <-quit:
@@ -62,12 +65,12 @@ func (d *Dispatcher) Start() {
 				return
 			case t := <-TaskQueue:
 				go func(task Task) {
-					worker := <-pool // Blocks until a worker is available.
+					worker := <-workerPool // Blocks until a worker is available.
 					worker <- task
 				}(t)
 			}
 		}
-	}(d.pool, d.quit)
+	}(d.workerPool, d.quit)
 }
 
 // Stop shuts down all workers in the pool.
