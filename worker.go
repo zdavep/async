@@ -34,7 +34,7 @@ func (w *worker) start() {
 // Process tasks until instructed to stop.
 func processTasks(id int, pool workerPool, worker workQueue, quit chan bool) {
 	for {
-		pool <- worker // Indicate we're ready for a task
+		pool <- worker // Indicate worker is ready for a task
 		select {
 		case <-quit:
 			return

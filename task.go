@@ -10,7 +10,7 @@ import (
 // The default queue size
 const defQueueSize int = 1000
 
-// Task is some unit of work that can be processed.
+// Task is a unit of work that needs to be processed.
 type Task interface {
 	Process() error
 }

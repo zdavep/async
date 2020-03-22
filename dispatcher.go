@@ -44,24 +44,27 @@ func NewDispatcher(size int) *Dispatcher {
 	return d
 }
 
-// Start spins up workers, then creates a go-routine that receives tasks and dispatches them to the worker pool.
+// Start spins up workers, then creates a go-routine that dispatches tasks to the worker pool.
 func (d *Dispatcher) Start() {
 	for _, worker := range d.workers {
 		worker.start()
 	}
-	go func(pool workerPool, quit chan bool) {
-		for {
-			select {
-			case <-quit:
-				return
-			case t := <-TaskQueue:
-				go func(task Task) {
-					worker := <-pool // Blocks until a worker is available.
-					worker <- task
-				}(t)
-			}
+	go dispatchTasks(d.pool, d.quit)
+}
+
+// Dispatch tasks until instructed to quit.
+func dispatchTasks(pool workerPool, quit chan bool) {
+	for {
+		select {
+		case <-quit:
+			return
+		case t := <-TaskQueue:
+			go func(task Task) {
+				worker := <-pool // Blocks until a worker is available.
+				worker <- task
+			}(t)
 		}
-	}(d.pool, d.quit)
+	}
 }
 
 // Stop shuts down all workers in the pool.
