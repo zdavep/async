@@ -1,7 +1,6 @@
 package async
 
 import (
-	"log"
 	"runtime"
 )
 
@@ -11,15 +10,12 @@ const AutoSize int = -1
 // MinWorkers in the minimum worker pool size
 const MinWorkers int = 2
 
-// WorkerPool is a type alias for a channel of task channels (ie where workers receive tasks).
-type WorkerPool = chan chan Task
-
 // Dispatcher dispatches tasks to a pool of workers for processing.
 type Dispatcher struct {
-	workerPool WorkerPool
-	size       int
-	workers    []*worker
-	quit       chan bool
+	pool    workerPool
+	size    int
+	workers []*worker
+	quit    chan bool
 }
 
 // Determine the worker pool size based on the number of available CPUs.
@@ -33,22 +29,18 @@ func autoSizePool() (size int) {
 
 // NewDispatcher creates a new dispatcher instance.
 func NewDispatcher(size int) *Dispatcher {
-
 	if size < MinWorkers {
 		size = autoSizePool()
 	}
-
 	d := &Dispatcher{
-		workerPool: make(WorkerPool, size),
-		size:       size,
-		workers:    make([]*worker, size),
-		quit:       make(chan bool),
+		pool:    make(workerPool, size),
+		size:    size,
+		workers: make([]*worker, size),
+		quit:    make(chan bool),
 	}
-
 	for i := 0; i < d.size; i++ {
-		d.workers[i] = newWorker(i, d.workerPool)
+		d.workers[i] = newWorker(i, d.pool)
 	}
-
 	return d
 }
 
@@ -57,20 +49,19 @@ func (d *Dispatcher) Start() {
 	for _, worker := range d.workers {
 		worker.start()
 	}
-	go func(workerPool WorkerPool, quit chan bool) {
+	go func(pool workerPool, quit chan bool) {
 		for {
 			select {
 			case <-quit:
-				log.Println("async: quit signal in dispatcher")
 				return
 			case t := <-TaskQueue:
 				go func(task Task) {
-					worker := <-workerPool // Blocks until a worker is available.
+					worker := <-pool // Blocks until a worker is available.
 					worker <- task
 				}(t)
 			}
 		}
-	}(d.workerPool, d.quit)
+	}(d.pool, d.quit)
 }
 
 // Stop shuts down all workers in the pool.
