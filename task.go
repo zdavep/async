@@ -20,18 +20,14 @@ var TaskQueue chan Task
 
 // Initialize the task queue.
 func init() {
-
 	var queueSize int
 	var err error
-
 	envSize := strings.TrimSpace(os.Getenv("ASYNC_TASK_QUEUE_SIZE"))
-
 	if envSize == "" {
 		queueSize = defQueueSize
 	} else if queueSize, err = strconv.Atoi(envSize); err != nil {
 		log.Printf("async: unable to convert task queue size to int: %v", err)
 		queueSize = defQueueSize
 	}
-
 	TaskQueue = make(chan Task, queueSize)
 }

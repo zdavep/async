@@ -3,10 +3,10 @@ package async
 import "log"
 
 // A type alias for a task channel (ie where workers receive tasks).
-type workQueue = chan Task
+type workQueue chan Task
 
 // A type alias for a channel of work queues.
-type workerPool = chan workQueue
+type workerPool chan workQueue
 
 // A worker performs task processing.
 type worker struct {
