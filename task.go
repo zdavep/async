@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-// The default queue size
-const defQueueSize int = 1000
+// The default queue buffer size
+const defSize int = 1000
 
 // Task is a unit of work that needs to be processed.
 type Task interface {
@@ -20,14 +20,13 @@ var TaskQueue chan Task
 
 // Initialize the task queue.
 func init() {
-	var queueSize int
+	var size int
 	var err error
 	envSize := strings.TrimSpace(os.Getenv("ASYNC_TASK_QUEUE_SIZE"))
 	if envSize == "" {
-		queueSize = defQueueSize
-	} else if queueSize, err = strconv.Atoi(envSize); err != nil {
-		log.Printf("async: unable to convert task queue size to int: %v", err)
-		queueSize = defQueueSize
+		size = defSize
+	} else if size, err = strconv.Atoi(envSize); err != nil {
+		log.Panicf("async: unable to convert task queue size to int: %v", err)
 	}
-	TaskQueue = make(chan Task, queueSize)
+	TaskQueue = make(chan Task, size)
 }

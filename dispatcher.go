@@ -1,6 +1,7 @@
 package async
 
 import (
+	"log"
 	"runtime"
 )
 
@@ -27,8 +28,8 @@ func autoSizePool() (size int) {
 	return
 }
 
-// NewDispatcher creates a new dispatcher instance.
-func NewDispatcher(size int) *Dispatcher {
+// NewDispatcherWithErrChan creates a new dispatcher instance with a channel for errors.
+func NewDispatcherWithErrChan(size int, errs chan error) *Dispatcher {
 	if size < MinWorkers {
 		size = autoSizePool()
 	}
@@ -39,9 +40,23 @@ func NewDispatcher(size int) *Dispatcher {
 		quit:    make(chan bool),
 	}
 	for i := 0; i < d.size; i++ {
-		d.workers[i] = newWorker(i, d.pool)
+		d.workers[i] = newWorker(i, d.pool, errs)
 	}
 	return d
+}
+
+// NewDispatcher creates a new dispatcher instance.
+func NewDispatcher(size int) *Dispatcher {
+	errs := make(chan error)
+	go logErrors(errs)
+	return NewDispatcherWithErrChan(size, errs)
+}
+
+// Log errors to stdout.
+func logErrors(errs <-chan error) {
+	for err := range errs {
+		log.Printf("async: process error: %v", err)
+	}
 }
 
 // Start spins up workers, then creates a go-routine that dispatches tasks to the worker pool.

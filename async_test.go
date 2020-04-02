@@ -3,46 +3,74 @@ package async
 import (
 	"math/rand"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
 
-var sum uint64
+var results []fibNum
+var mu sync.Mutex
 var wg sync.WaitGroup
 
-type testTask struct {
-	value uint64
+// The n-th fibonacci number.
+type fibNum struct {
+	n   int
+	num int
 }
 
+// A task that will calculate the n-th fibonacci number.
+type calcFibNum struct {
+	n int
+}
+
+// Seed rand package
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().Unix())
 }
 
-// Process atomically increments the `sum` variable.
-func (tt *testTask) Process() error {
-	r := rand.Intn(100) + 100
-	time.Sleep(time.Duration(r) * time.Millisecond) // Simulate I/O
-	atomic.AddUint64(&sum, tt.value)
+// Calculate the n-th fibonacci number.
+func fib(i int) int {
+	if i <= 0 {
+		return 0
+	}
+	if i == 1 {
+		return 1
+	}
+	return fib(i-2) + fib(i-1)
+}
+
+// Process calculates a fibonacci number and appends to results.
+func (t *calcFibNum) Process() error {
+	num := fib(t.n)
+	result := fibNum{t.n, num}
+	mu.Lock()
+	results = append(results, result)
+	mu.Unlock()
 	wg.Done()
 	return nil
 }
 
+// TestAsync queues a range of fibonacci number tasks, waits, then
+// tests that the correct number of values were calculated.
 func TestAsync(t *testing.T) {
 
 	d := NewDispatcher(AutoSize)
 	d.Start()
 	defer d.Stop()
 
-	for i := 1; i <= 10; i++ {
+	var sent int
+	for n := 37; n >= 25; n-- { // Reasonably fast range that still requires some time.
 		wg.Add(1)
-		TaskQueue <- &testTask{value: uint64(i)}
+		t.Logf("queue task for fib num %d", n)
+		TaskQueue <- &calcFibNum{n}
+		sent++
 	}
 
 	wg.Wait()
 
-	var expectedSum uint64 = 55 // 1+2+3+4+5+6+7+8+9+10
-	if sum != expectedSum {
-		t.Errorf("sum does not equal expected value: %d != %d", sum, expectedSum)
+	if len(results) != sent {
+		t.Fatalf("result does not contain expected number of values: %d", sent)
+	}
+	for _, r := range results {
+		t.Logf("got fib num %d = %d", r.n, r.num)
 	}
 }
