@@ -35,7 +35,7 @@ func fib(i int) int {
 	if i == 1 {
 		return 1
 	}
-	return fib(i-2) + fib(i-1)
+	return fib(i-1) + fib(i-2)
 }
 
 // Process calculates a fibonacci number and appends to results.
@@ -53,7 +53,8 @@ func (t *calcFibNum) Process() error {
 // tests that the correct number of values were calculated.
 func TestAsync(t *testing.T) {
 
-	d := NewDispatcher(AutoSize)
+	d, e := NewDispatcher(AutoSize)
+	d.LogErrors(e) // Just have the dispatcher log errors
 	d.Start()
 	defer d.Stop()
 
