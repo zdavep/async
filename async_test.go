@@ -1,10 +1,8 @@
 package async
 
 import (
-	"math/rand"
 	"sync"
 	"testing"
-	"time"
 )
 
 var results []fibNum
@@ -20,11 +18,6 @@ type fibNum struct {
 // A task that will calculate the n-th fibonacci number.
 type calcFibNum struct {
 	n int
-}
-
-// Seed rand package
-func init() {
-	rand.Seed(time.Now().Unix())
 }
 
 // Calculate the n-th fibonacci number.
@@ -54,7 +47,7 @@ func (t *calcFibNum) Process() error {
 func TestAsync(t *testing.T) {
 
 	d, e := NewDispatcher(AutoSize)
-	d.LogErrors(e) // Just have the dispatcher log errors
+	d.LogErrors(e)
 	d.Start()
 	defer d.Stop()
 

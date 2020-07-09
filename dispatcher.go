@@ -52,7 +52,7 @@ func NewDispatcher(size int) (*Dispatcher, <-chan error) {
 func (d *Dispatcher) LogErrors(errs <-chan error) {
 	go func() {
 		for err := range errs {
-			log.Printf("async: process error: %v", err)
+			log.Printf("async: task processing error: %v", err)
 		}
 	}()
 }
